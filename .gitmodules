@@ -1,0 +1,3 @@
+[submodule "bpfmap/libcuckoofilter"]
+	path = bpfmap/libcuckoofilter
+	url = https://github.com/jonahharris/libcuckoofilter.git
