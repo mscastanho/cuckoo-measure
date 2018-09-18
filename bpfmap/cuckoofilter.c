@@ -11,6 +11,7 @@
 struct bpf_cfilter {
     struct bpf_map map;
     cuckoo_filter_t *cfilter;
+    CUCKOO_FILTER_RETURN found;
 };
 
 struct bpf_map *cfilter_map_alloc(union bpf_attr *attr){
@@ -50,13 +51,32 @@ struct bpf_map *cfilter_map_alloc(union bpf_attr *attr){
 }
 
 void cfilter_map_free(struct bpf_map *map){
+    struct bpf_cfilter *cf = container_of(map, struct bpf_cfilter, map);
 
+    cuckoo_filter_free(&cf->cfilter);
+    free(map);
 }
 
 void *cfilter_map_lookup_elem(struct bpf_map *map, void *key){
+    struct bpf_cfilter *cf = container_of(map, struct bpf_cfilter, map);
 
+    cf->found = cuckoo_filter_contains(cf->cfilter,key,map->key_size);
+
+    return &(cf->found);
 }
 
-int cfilter_map_get_next_key(struct bpf_map *map, void *key, void *next_key){}
-int cfilter_map_update_elem(struct bpf_map *map, void *key, void *value, uint64_t map_flags){}
-int cfilter_map_delete_elem(struct bpf_map *map, void *key){}
+int cfilter_map_get_next_key(struct bpf_map *map, void *key, void *next_key){
+    errno = EINVAL;
+    return -1;
+}
+
+int cfilter_map_update_elem(struct bpf_map *map, void *key, void *value, uint64_t map_flags){
+    errno = EINVAL;
+    return -1;
+}
+
+int cfilter_map_delete_elem(struct bpf_map *map, void *key){
+    struct bpf_cfilter *cf = container_of(map, struct bpf_cfilter, map);
+
+    cuckoo_filter_remove(cf->cfilter,key,map->key_size);
+}

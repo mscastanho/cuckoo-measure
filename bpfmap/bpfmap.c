@@ -4,6 +4,7 @@
 #include "bpfmap.h"
 #include "arraymap.h"
 #include "hashtab.h"
+#include "cuckoofilter.h"
 
 #define MAX_MAPS 64
 
@@ -26,6 +27,14 @@ const struct bpf_map_ops bpf_map_types[] = {
         .map_lookup_elem = array_map_lookup_elem,
         .map_update_elem = array_map_update_elem,
         .map_delete_elem = array_map_delete_elem,
+    },
+    [BPF_MAP_TYPE_CFILTER] = {
+        .map_alloc = cfilter_map_alloc,
+        .map_free = cfilter_map_free,
+        .map_get_next_key = cfilter_map_get_next_key,
+        .map_lookup_elem = cfilter_map_lookup_elem,
+        .map_update_elem = cfilter_map_update_elem,
+        .map_delete_elem = cfilter_map_delete_elem,
     }
 };
 
