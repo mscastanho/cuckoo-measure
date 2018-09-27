@@ -2,7 +2,7 @@ all::
 
 INSTALL=install
 PREFIX=/usr/local
-CFLAGS=-I./libcuckoofilter/include
+CFLAGS=-I./libcuckoofilter/include -g
 
 -include bpfmap-env.mk
 

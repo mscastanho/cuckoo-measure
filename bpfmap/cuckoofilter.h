@@ -3,7 +3,6 @@
 
 #include "bpfmap.h"
 
-#define MAX_ELEMS 1024
 #define MAX_KICKS 500
 
 struct bpf_map *cfilter_map_alloc(union bpf_attr *attr);

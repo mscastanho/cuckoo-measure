@@ -11,7 +11,7 @@
 struct bpf_cfilter {
     struct bpf_map map;
     cuckoo_filter_t *cfilter;
-    CUCKOO_FILTER_RETURN found;
+    int found;
 };
 
 struct bpf_map *cfilter_map_alloc(union bpf_attr *attr){
@@ -40,7 +40,7 @@ struct bpf_map *cfilter_map_alloc(union bpf_attr *attr){
     /* TODO: Check attributes passed to function*/
     /* TODO: Allow configuration of filter, bucket and fingerprint sizes */
 
-    ret = cuckoo_filter_new(&cf->cfilter,MAX_ELEMS,MAX_KICKS,(uint32_t) (time(NULL) & 0xffffffff));
+    ret = cuckoo_filter_new(&cf->cfilter,cf->map.max_entries,MAX_KICKS,(uint32_t) (time(NULL) & 0xffffffff));
     if( ret != CUCKOO_FILTER_OK ){
         free(cf);
         errno = EINVAL;
@@ -59,8 +59,14 @@ void cfilter_map_free(struct bpf_map *map){
 
 void *cfilter_map_lookup_elem(struct bpf_map *map, void *key){
     struct bpf_cfilter *cf = container_of(map, struct bpf_cfilter, map);
+    CUCKOO_FILTER_RETURN ret;
 
-    cf->found = cuckoo_filter_contains(cf->cfilter,key,map->key_size);
+    ret = cuckoo_filter_contains(cf->cfilter,key,map->key_size);
+
+    if(ret == CUCKOO_FILTER_OK)
+        cf->found = 0; // Probably in the filter
+    else
+        cf->found = 1; // Not in the filter
 
     return &(cf->found);
 }
@@ -71,8 +77,20 @@ int cfilter_map_get_next_key(struct bpf_map *map, void *key, void *next_key){
 }
 
 int cfilter_map_update_elem(struct bpf_map *map, void *key, void *value, uint64_t map_flags){
-    errno = EINVAL;
-    return -1;
+    struct bpf_cfilter *cf = container_of(map, struct bpf_cfilter, map);
+    CUCKOO_FILTER_RETURN ret;
+
+    /* All cases will be treated equally, regardless of map_flags */
+
+    // printf("Key size: %d\n",cf->map.key_size);
+    ret = cuckoo_filter_add(cf->cfilter,key,cf->map.key_size);
+    if(ret != CUCKOO_FILTER_OK){
+        errno = E2BIG;
+        return -1;
+    }
+
+    return 0;
+
 }
 
 int cfilter_map_delete_elem(struct bpf_map *map, void *key){
