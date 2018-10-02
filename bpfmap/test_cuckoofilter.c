@@ -4,9 +4,10 @@
 #include <time.h>
 #include "cuckoofilter.h"
 
-#define MAX_RANGE   20000
-#define MAX_INSERT  13000
+#define MAX_RANGE   200000
+#define MAX_INSERT  150000
 #define MAX_RUNS    1
+#define MAX_DELETE  50000
 
 /* To compile run:
         gcc test_cuckoofilter.c -o testcf -L ./ -lbpfmap
@@ -43,7 +44,7 @@ int main(){
     while(cnt < MAX_INSERT){
         r = rand() % MAX_RANGE;
 
-        if(!added[r]){ 
+        if(!added[r]){
             // printf("%d ",r);
             // fflush(stdout);
             ret = cfilter_map_update_elem(map,&r,0,0);
@@ -56,46 +57,74 @@ int main(){
     /* Test false-positive rate*/
     int fpos, tpos, fneg, tneg, nlookups;
 
-    for(i = 0 ; i < MAX_RUNS ; i++){
-        fpos = tpos = fneg = tneg = nlookups = 0;
+    fpos = tpos = fneg = tneg = nlookups = 0;
 
-        for(j = 0 ; j < MAX_RANGE ; j++){
-            res = cfilter_map_lookup_elem(map,&j);
-            nlookups++;
+    for(j = 0 ; j < MAX_RANGE ; j++){
+        res = cfilter_map_lookup_elem(map,&j);
+        nlookups++;
 
-            if(*res == 0){
-                if(added[j])
-                    tpos++;
-                else
-                    fpos++;
-            }else{
-                if(added[j])
-                    fneg++;
-                else
-                    tneg++;
-            }
-
-            // if(added[j]){ 
-            //     if(*res == 0) // True positive
-            //         tpos += 1;
-            //     else // False negative, should never happen
-            //         fneg += 1; 
-            // }else{
-            //     if(*res == 0) // False positive
-            //         fpos += 1; 
-            //     else // True negative
-            //         tneg += 1;
-            // }
+        if(*res){
+            if(added[j])
+                tpos++; // True positive
+            else
+                fpos++; // False positive
+        }else{
+            if(added[j])
+                fneg++; // False negative, should never happen
+            else
+                tneg++; // True negative
         }
-
-        printf("================================================\n");
-        printf("\t\t   Results\n");
-        printf("================================================\n");
-        printf("Type\t\t\tExpected\tObtained\n");
-        printf("False negatives\t\t%d\t\t%d\n",0,fneg);
-        printf("False positives\t\t%d\t\t%d\n",(int)(0.001*MAX_INSERT),fpos);
-        printf("True negatives\t\t%d\t\t%d\n",MAX_RANGE-MAX_INSERT,tneg);
-        printf("True positives\t\t%d\t\t%d\n\n",MAX_INSERT,tpos);
-        printf("================================================\n");
     }
+
+    printf("================================================\n");
+    printf("\t\t   Results\n");
+    printf("================================================\n");
+    printf("Type\t\t\tExpected\tObtained\n");
+    printf("False negatives\t\t%d\t\t%d\n",0,fneg);
+    printf("False positives\t\t< %d\t\t%d\n",(int)(0.001*MAX_RANGE),fpos);
+    printf("True negatives\t\t> %d\t\t%d\n",MAX_RANGE-MAX_INSERT-(int)(0.001*MAX_RANGE),tneg);
+    printf("True positives\t\t%d\t\t%d\n\n",MAX_INSERT,tpos);
+    printf("================================================\n");
+
+    /* Delete MAX_DELETE random elements from the filter */
+    cnt = 0;
+    while(cnt < MAX_DELETE){
+        r = rand() % MAX_RANGE;
+
+        if(added[r] == 1){ 
+            cfilter_map_delete_elem(map,&r);
+            added[r] = -1;
+            cnt++;
+        }
+    }
+
+    fpos = tpos = fneg = tneg = nlookups = 0;
+
+    for(j = 0 ; j < MAX_RANGE ; j++){
+        res = cfilter_map_lookup_elem(map,&j);
+        nlookups++;
+
+        if(*res){
+            if(added[j] == 1)
+                tpos++; // True positive
+            else
+                fpos++; // False positive
+        }else{
+            if(added[j] == 1)
+                fneg++; // False negative, should never happen
+            else
+                tneg++; // True negative
+        }
+    }
+
+    printf("================================================\n");
+    printf("\t     Results after deletion\n");
+    printf("================================================\n");
+    printf("Type\t\t\tExpected\tObtained\n");
+    printf("False negatives\t\t%d\t\t%d\n",0,fneg);
+    printf("False positives\t\t< %d\t\t%d\n",(int)(0.001*MAX_RANGE),fpos);
+    printf("True negatives\t\t> %d\t\t%d\n",MAX_RANGE-MAX_INSERT+MAX_DELETE-(int)(0.001*MAX_RANGE),tneg);
+    printf("True positives\t\t%d\t\t%d\n\n",MAX_INSERT-MAX_DELETE,tpos);
+    printf("================================================\n");
+
 }

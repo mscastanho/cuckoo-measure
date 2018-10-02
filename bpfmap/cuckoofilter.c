@@ -64,9 +64,9 @@ void *cfilter_map_lookup_elem(struct bpf_map *map, void *key){
     ret = cuckoo_filter_contains(cf->cfilter,key,map->key_size);
 
     if(ret == CUCKOO_FILTER_OK)
-        cf->found = 0; // Probably in the filter
+        cf->found = 1; // Probably in the filter
     else
-        cf->found = 1; // Not in the filter
+        cf->found = 0; // Not in the filter
 
     return &(cf->found);
 }
