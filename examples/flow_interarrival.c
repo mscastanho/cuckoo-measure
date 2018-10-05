@@ -16,7 +16,7 @@ const uint64_t WINDOW_TIME = 10000000ULL; // Refresh interval:
 
 // The windows is divided into 32 buckets,
 // each represented by an individual cuckoo filter
-const uint64_t SLOT_TIME = WINDOW_TIME>>5;
+const uint64_t SLOT_TIME = WINDOW_TIME>>3;
 
 struct ip_5tuple {
     uint32_t sip;
@@ -28,7 +28,8 @@ struct ip_5tuple {
 
 struct globals {
     uint8_t      curr_slot;
-    uint64_t    init_timestamp;
+    uint64_t     slot_timestamp;
+    uint64_t     window_timestamp;
 };
 
 struct bpf_map_def SEC("maps") global_vals = {
@@ -101,8 +102,6 @@ struct bpf_map_def SEC("maps") slot7 = {
     .max_entries = MAX_ENTRIES,
 };
 
-struct bpf_map_def *slots[] = {&slot0,&slot1,&slot2,&slot3,&slot4,&slot5,&slot6,&slot7};
-
 static inline int parse_5tuple(struct packet *pkt, struct ip_5tuple *t){
     struct iphdr    *ip;
     struct tcphdr   *tcp;
@@ -145,6 +144,41 @@ static inline int parse_5tuple(struct packet *pkt, struct ip_5tuple *t){
     return 0;
 }
 
+static inline struct bpf_map_def* get_slot(uint8_t index){
+
+    switch(index){
+        case 0:
+            return &slot0;
+            break;
+        case 1:
+            return &slot1;
+            break;
+        case 2:
+            return &slot2;
+            break;
+        case 3:
+            return &slot3;
+            break;
+        case 4:
+            return &slot4;
+            break;
+        case 5:
+            return &slot5;
+            break;
+        case 6:
+            return &slot6;
+            break;
+        case 7:
+            return &slot7;
+            break;
+    }
+
+    return NULL;
+}
+
+// struct bpf_map_def *slots[] = {&slot0,&slot1,&slot2,&slot3,&slot4,&slot5,&slot6,&slot7};
+
+
 uint64_t prog(struct packet *pkt)
 {
     size_t zero = 0;
@@ -152,32 +186,40 @@ uint64_t prog(struct packet *pkt)
     struct ip_5tuple t = {0,0,0,0,0};
     struct bpf_map_def *time_slot;
     uint64_t currenttime;
-    uint64_t delta;
+    uint64_t window_delta;
+    uint64_t slot_delta;
     
     bpf_map_lookup_elem(&global_vals,&zero,&vals);
     
     currenttime = ((uint64_t)pkt->metadata.sec << 32) | pkt->metadata.nsec;
-    delta = currenttime - vals->init_timestamp;
-    
-    if(delta > SLOT_TIME){
-        vals->curr_slot = (vals->curr_slot + 1)%NB_TIMESLOTS;
-    
-        if(delta > WINDOW_TIME){
-            // Do something I don't know yet
-            vals->init_timestamp = currenttime;
-        }
+    window_delta = currenttime - vals->window_timestamp;
+    slot_delta = currenttime - vals->slot_timestamp;
 
+    if(window_delta >= WINDOW_TIME){
+        // Do something I don't know yet
+        vals->window_timestamp = currenttime;
+        bpf_debug("WINDOW!!");
+    }
+
+    if(slot_delta >= SLOT_TIME){
+        vals->curr_slot = (vals->curr_slot + 1)%NB_TIMESLOTS;
+        vals->slot_timestamp = currenttime;
+        // bpf_debug("SLOT!!");
         // bpf_notify(1,&delta,sizeof(delta));
     }
 
-    bpf_notify(1,&delta,sizeof(delta));
+    // bpf_notify(1,&delta,sizeof(delta));
 
     parse_5tuple(pkt,&t);
 
+    // Mark flow as seen    
     if(t.proto != 0){
-        // Mark flow as seen
-        time_slot = slots[vals->curr_slot];
+        // time_slot = slots[vals->curr_slot];
+        time_slot = get_slot(vals->curr_slot);
+
         bpf_map_update_elem(time_slot,&t,0,0);
+        // bpf_notify(4,&time_slot,sizeof(time_slot));
+        // bpf_notify(3,&vals->curr_slot,sizeof(vals->curr_slot));
     }
 
     // Learning Switch
