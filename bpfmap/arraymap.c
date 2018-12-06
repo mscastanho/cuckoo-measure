@@ -110,3 +110,7 @@ int array_map_delete_elem(struct bpf_map *map, void *key)
     errno = EINVAL;
     return -1;
 }
+
+void  array_map_save(struct bpf_map *map){
+    /*no_op*/
+}

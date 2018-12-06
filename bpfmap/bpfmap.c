@@ -19,6 +19,7 @@ const struct bpf_map_ops bpf_map_types[] = {
         .map_lookup_elem = htab_map_lookup_elem,
         .map_update_elem = htab_map_update_elem,
         .map_delete_elem = htab_map_delete_elem,
+        .map_save = htab_map_save, /* placeholder */
     },
     [BPF_MAP_TYPE_ARRAY] = {
         .map_alloc = array_map_alloc,
@@ -27,6 +28,7 @@ const struct bpf_map_ops bpf_map_types[] = {
         .map_lookup_elem = array_map_lookup_elem,
         .map_update_elem = array_map_update_elem,
         .map_delete_elem = array_map_delete_elem,
+        .map_save = array_map_save, /* placeholder */
     },
     [BPF_MAP_TYPE_CFILTER] = {
         .map_alloc = cfilter_map_alloc,
@@ -35,6 +37,7 @@ const struct bpf_map_ops bpf_map_types[] = {
         .map_lookup_elem = cfilter_map_lookup_elem,
         .map_update_elem = cfilter_map_update_elem,
         .map_delete_elem = cfilter_map_delete_elem,
+        .map_save = cfilter_map_save,
     }
 };
 
@@ -98,4 +101,13 @@ int bpf_delete_elem(int map, void *key) {
 int bpf_get_next_key(int map, void *key, void *next_key) {
     struct bpf_map *m = bpf_maps[map];
     return m->ops->map_get_next_key(m, key, next_key);
+}
+
+int bpf_save_map(int map){
+    struct bpf_map *m = bpf_maps[map];
+    
+    // This will only have any effect on Cuckoo Filter
+    m->ops->map_save(m);
+
+    return 0;
 }

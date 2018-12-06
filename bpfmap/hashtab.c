@@ -179,3 +179,7 @@ int htab_map_get_next_key(struct bpf_map *map, void *key, void *next_key)
     memcpy(next_key, p_key, map->key_size);
     return 0;
 }
+
+void htab_map_save(struct bpf_map *map){
+    /*no_op*/
+}

@@ -4,9 +4,9 @@
 #include <time.h>
 #include "cuckoofilter.h"
 
-#define MAX_RANGE   20000
-#define MAX_INSERT  13000
-#define MAX_RUNS    1
+#define MAX_RANGE   40000
+#define MAX_INSERT  ((int) (MAX_RANGE*0.8))
+#define MAX_RUNS    2
 
 /* To compile run:
         gcc test_cuckoofilter.c -o testcf -L ./ -lbpfmap
@@ -97,5 +97,7 @@ int main(){
         printf("True negatives\t\t%d\t\t%d\n",MAX_RANGE-MAX_INSERT,tneg);
         printf("True positives\t\t%d\t\t%d\n\n",MAX_INSERT,tpos);
         printf("================================================\n");
+        
+        cfilter_map_save(map);
     }
 }
