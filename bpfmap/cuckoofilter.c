@@ -47,7 +47,7 @@ struct bpf_map *cfilter_map_alloc(union bpf_attr *attr){
         return NULL;
     }
 
-    printf("Map created successfully. Size: %lu bytes\n",cuckoo_filter_memsize(cf->cfilter));
+    // printf("Map created successfully. Size: %lu bytes\n",cuckoo_filter_memsize(cf->cfilter));
 
     return &cf->map;
 }

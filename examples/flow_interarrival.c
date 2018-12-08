@@ -6,15 +6,16 @@
 #include <linux/icmp.h>
 #include <stdlib.h>
 #include "ebpf_switch.h"
+#include "ebpf_helpers.h"
 
 #define MAX_ENTRIES 1<<8
 #define NB_TIMESLOTS 8
 #define BPF_MAP_TYPE_CFILTER 3
 
-const uint64_t WINDOW_TIME = 10000000ULL; // Refresh interval:
+const uint64_t WINDOW_TIME = 1000000000ULL; // Refresh interval:
                                           // 10 ms in nanoseconds
 
-// The windows is divided into 32 buckets,
+// The windows is divided into NB_TIMESLOTS buckets,
 // each represented by an individual cuckoo filter
 const uint64_t SLOT_TIME = WINDOW_TIME>>3;
 
@@ -111,20 +112,20 @@ static inline int parse_5tuple(struct packet *pkt, struct ip_5tuple *t){
     if (pkt->eth.h_proto == 0x0008) {
 
         ip = (struct iphdr *)(((uint8_t *)&pkt->eth) + ETH_HLEN);
-        t->sip = ip->saddr;
-        t->dip = ip->daddr;
+        t->sip = ntohl(ip->saddr);
+        t->dip = ntohl(ip->daddr);
 
         switch(ip->protocol){
             case IPPROTO_TCP:
                 tcp = (struct tcphdr *)(((uint32_t *)ip) + ip->tot_len);
-                t->sport = tcp->source;
-                t->dport = tcp->dest;
+                t->sport = ntohs(tcp->source);
+                t->dport = ntohs(tcp->dest);
                 t->proto = IPPROTO_TCP;
                 break;
             case IPPROTO_UDP:
                 udp = (struct udphdr *)(((uint32_t *)ip) + ip->tot_len);
-                t->sport = udp->source;
-                t->dport = udp->dest;
+                t->sport = ntohs(udp->source);
+                t->dport = ntohs(udp->dest);
                 t->proto = IPPROTO_UDP;
                 break;
             case IPPROTO_ICMP:
@@ -216,19 +217,14 @@ uint64_t prog(struct packet *pkt)
         // bpf_debug("WINDOW!!");
     }
 
-
-    // bpf_notify(1,&delta,sizeof(delta));
-
-    parse_5tuple(pkt,&t);
-
     // Mark flow as seen
-    if(t.proto != 0){
+    if(!parse_5tuple(pkt,&t) && t.proto != 0){
         // time_slot = slots[vals->curr_slot];
         time_slot = get_slot(vals->curr_slot);
 
         bpf_map_update_elem(time_slot,&t,0,0);
+
         // bpf_notify(4,&time_slot,sizeof(time_slot));
-        // bpf_notify(3,&vals->curr_slot,sizeof(vals->curr_slot));
     }
 
     // ================== Learning Switch ==================

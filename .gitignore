@@ -53,3 +53,8 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+*.pyc
+*.cuckoo
+*.pb-c.*
+*_pb2.py

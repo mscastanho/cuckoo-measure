@@ -3,10 +3,11 @@
 #include <string.h>
 #include <time.h>
 #include "cuckoofilter.h"
+#include "libcuckoofilter/include/cuckoo_filter.h"
 
-#define MAX_RANGE   40000
+#define MAX_RANGE   256
 #define MAX_INSERT  ((int) (MAX_RANGE*0.8))
-#define MAX_RUNS    2
+#define MAX_RUNS    1
 
 /* To compile run:
         gcc test_cuckoofilter.c -o testcf -L ./ -lbpfmap
@@ -32,10 +33,10 @@ int main(){
     printf("Map created successfully\n");
 
     int i,j,cnt,*res,r,ret;
-    time_t t;
+    time_t seed;
     int added[MAX_RANGE];
 
-    srand((unsigned) time(&t));
+    srand((unsigned) time(&seed));
     memset(added,0,sizeof(added));
 
     /* Insert MAX_INSERT random elements in the filter */
@@ -97,7 +98,13 @@ int main(){
         printf("True negatives\t\t%d\t\t%d\n",MAX_RANGE-MAX_INSERT,tneg);
         printf("True positives\t\t%d\t\t%d\n\n",MAX_INSERT,tpos);
         printf("================================================\n");
-        
-        cfilter_map_save(map);
     }
+
+    clock_t t;
+    t = clock();
+    cfilter_map_save(map);
+    t = clock() - t;
+    double time_taken = ((double)t)/CLOCKS_PER_SEC;
+
+    printf("Time taken to save filter: %f\n",time_taken);
 }
