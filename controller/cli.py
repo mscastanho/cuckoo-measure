@@ -183,6 +183,12 @@ class eBPFCLIApplication(eBPFCoreApplication):
     def packet_in(self, connection, pkt):
 	print '\n[{}] Received packet in {}'.format(connection.dpid, pkt.data.encode('hex'))
 
+    @set_event_handler(Header.HELLO)
+    def install_code(self, connection, pkt):
+        with open("../examples/flow_interarrival.o", 'rb') as f:
+            elf = f.read()
+            connection.send(InstallRequest(elf=elf))
+        print '\nInstalled flow_interarrival.o on switch {}'.format(connection.dpid)
 
 if __name__ == '__main__':
     eBPFCLIApplication().run()

@@ -2,7 +2,6 @@
 import argparse
 import sys
 from scapy.all import *
-import tqdm
 import time
 import csv
 
@@ -72,7 +71,7 @@ def main(argv):
 
     cnt = 0
     start_time = time.time()
-    PKT_CNT_LIMIT = 10_000
+    PKT_CNT_LIMIT = 50000
     FLOW_MIN_PKTS = 100
     out_file = "selected_flows_%s_%s.pcap" % (PKT_CNT_LIMIT,FLOW_MIN_PKTS)
     for pkt in PcapReader(filename):
@@ -128,6 +127,7 @@ def main(argv):
             
             if t in selected:
                 cntsel += 1
+                print(pkt.time*100)
                 pw.write(pkt)
             
             cnt += 1

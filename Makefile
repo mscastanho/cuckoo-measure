@@ -1,4 +1,4 @@
-TARGETS:=switch examples-src
+TARGETS:=switch examples-src tools
 ifdef RTE_SDK
 	TARGETS:=dpdkswitch-src
 endif
@@ -26,6 +26,9 @@ dpdkswitch-src: agent-src
 examples-src:
 	cd examples && $(MAKE)
 
+tools:
+	cd tools && $(MAKE)
+
 clean:
 	cd bpfmap && $(MAKE) clean
 	cd ubpf && $(MAKE) clean
@@ -33,6 +36,7 @@ clean:
 	cd protocol && $(MAKE) clean
 	cd softswitch && $(MAKE) clean
 	cd examples && $(MAKE) clean
+	cd tools $$ $(MAKE) clean
 ifdef RTE_SDK
   cd dpdkswitch && $(MAKE) clean
 endif

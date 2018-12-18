@@ -12,10 +12,10 @@
 #define NB_TIMESLOTS 8
 #define BPF_MAP_TYPE_CFILTER 3
 
-const uint64_t WINDOW_TIME = 1000000000ULL; // Refresh interval:
-                                          // 10 ms in nanoseconds
+const uint64_t WINDOW_TIME = 10000000ULL; // Refresh interval:
+                                          // 10ms in nanoseconds
 
-// The windows is divided into NB_TIMESLOTS buckets,
+// The window is divided into NB_TIMESLOTS buckets,
 // each represented by an individual cuckoo filter
 const uint64_t SLOT_TIME = WINDOW_TIME>>3;
 
@@ -205,16 +205,16 @@ uint64_t prog(struct packet *pkt)
 
     if(window_delta >= WINDOW_TIME){
         // Save the structure to file and clear entries
-        bpf_map_save(&slot0);
-        bpf_map_save(&slot1);
-        bpf_map_save(&slot2);
-        bpf_map_save(&slot3);
-        bpf_map_save(&slot4);
-        bpf_map_save(&slot5);
-        bpf_map_save(&slot6);
-        bpf_map_save(&slot7);
+        bpf_map_save(&slot0,"0.ck");
+        bpf_map_save(&slot1,"1.ck");
+        bpf_map_save(&slot2,"2.ck");
+        bpf_map_save(&slot3,"3.ck");
+        bpf_map_save(&slot4,"4.ck");
+        bpf_map_save(&slot5,"5.ck");
+        bpf_map_save(&slot6,"6.ck");
+        bpf_map_save(&slot7,"7.ck");
         vals->window_timestamp = currenttime;
-        // bpf_debug("WINDOW!!");
+        //bpf_debug("!");
     }
 
     // Mark flow as seen
@@ -223,7 +223,7 @@ uint64_t prog(struct packet *pkt)
         time_slot = get_slot(vals->curr_slot);
 
         bpf_map_update_elem(time_slot,&t,0,0);
-
+        //bpf_debug("!!");
         // bpf_notify(4,&time_slot,sizeof(time_slot));
     }
 
