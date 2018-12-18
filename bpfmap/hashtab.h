@@ -9,6 +9,6 @@ int htab_map_update_elem(struct bpf_map *map, void *key, void *value, uint64_t m
 int htab_map_delete_elem(struct bpf_map *map, void *key);
 void htab_map_free(struct bpf_map *map);
 int htab_map_get_next_key(struct bpf_map *map, void *key, void *next_key);
-void htab_map_save(struct bpf_map *map);
+void htab_map_save(struct bpf_map *map, char *filename);
 
 #endif

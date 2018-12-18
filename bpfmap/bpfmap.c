@@ -103,11 +103,11 @@ int bpf_get_next_key(int map, void *key, void *next_key) {
     return m->ops->map_get_next_key(m, key, next_key);
 }
 
-int bpf_save_map(int map){
+int bpf_save_map(int map, char *filename){
     struct bpf_map *m = bpf_maps[map];
     
     // This will only have any effect on Cuckoo Filter
-    m->ops->map_save(m);
+    m->ops->map_save(m, filename);
 
     return 0;
 }

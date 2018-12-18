@@ -111,6 +111,6 @@ int array_map_delete_elem(struct bpf_map *map, void *key)
     return -1;
 }
 
-void  array_map_save(struct bpf_map *map){
+void array_map_save(struct bpf_map *map, char *filename){
     /*no_op*/
 }

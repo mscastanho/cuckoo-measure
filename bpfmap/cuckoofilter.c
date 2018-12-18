@@ -101,8 +101,8 @@ int cfilter_map_delete_elem(struct bpf_map *map, void *key){
     cuckoo_filter_remove(cf->cfilter,key,map->key_size);
 }
 
-void cfilter_map_save(struct bpf_map *map){
+void cfilter_map_save(struct bpf_map *map, char *filename){
     struct bpf_cfilter *cf = container_of(map, struct bpf_cfilter, map);
 
-    cuckoo_filter_store_and_clean(cf->cfilter,"filter");
+    cuckoo_filter_store_and_clean(cf->cfilter,filename);
 }

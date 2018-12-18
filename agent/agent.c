@@ -524,7 +524,7 @@ uint64_t bpf_delete(uint64_t r1, uint64_t r2, uint64_t r3, uint64_t r4, uint64_t
 
 uint64_t bpf_save(uint64_t r1, uint64_t r2, uint64_t r3, uint64_t r4, uint64_t r5)
 {
-    return bpf_save_map(r1);
+    return bpf_save_map(r1,r2);
 }
 
 void *agent_task()
